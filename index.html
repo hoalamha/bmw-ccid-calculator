@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CC-ID Bit Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        textarea {
+            padding: 8px;
+            width: 100%;
+            height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .result-item {
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #e9e9e9;
+        }
+        .byte-string {
+            font-family: monospace;
+            background-color: #eef;
+            padding: 5px;
+        }
+        .changed-byte {
+            background-color: #ffeb3b;
+            font-weight: bold;
+        }
+        .note-short {
+            max-width: 250px;
+            white-space: normal; /* Cho phép xuống dòng */
+            cursor: pointer;
+            position: relative;
+        }
+        .note-short:hover::after {
+            content: attr(data-fulltext);
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+            max-width: 350px;
+            z-index: 100;
+            white-space: normal;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 100%;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CC-ID Bit Calculator</h1>
+        <div class="input-group">
+            <label for="inputType">Input Type:</label>
+            <select id="inputType">
+                <option value="dec">Decimal (DEC)</option>
+                <option value="hex">Hexadecimal (HEX)</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="ccids">Enter CC-IDs (separated by commas or spaces, e.g., 299, 300, 301 or 12B, 12C, 12D):</label>
+            <textarea id="ccids" placeholder="299, 300, 301 (DEC) or 12B, 12C, 12D (HEX)">299</textarea>
+        </div>
+        <button onclick="calculateBitPositions()">Calculate</button>
+        <div id="result">
+            <p>Enter CC-IDs and click "Calculate" to see the results.</p>
+        </div>
+    </div>
+
+    <script>
+        // Biến toàn cục để lưu trữ dữ liệu ghi chú từ file JSON
+        let ccidNotes = {};
+
+        // Hàm tải dữ liệu JSON từ file bên ngoài
+        async function loadNotesData() {
+            try {
+                const response = await fetch('ccid-notes.json');
+                const data = await response.json();
+                // Chuyển đổi mảng JSON thành đối tượng để truy cập nhanh theo ID
+                data.forEach(note => {
+                    ccidNotes[note.ID] = {
+                        short: `${note["Control unit"]}: ${note["Text (short form)"]}`,
+                        long: note["Text (long form)"]
+                    };
+                });
+                console.log("Notes data loaded successfully.");
+            } catch (error) {
+                console.error("Error loading notes data:", error);
+                document.getElementById('result').innerHTML = '<p class="error">Error loading notes data. Please check console for details.</p>';
+            }
+        }
+
+        // Tải dữ liệu khi trang được load
+        window.onload = function() {
+            loadNotesData();
+        };
+
+        function calculateBitPositions() {
+            const inputType = document.getElementById('inputType').value;
+            const inputText = document.getElementById('ccids').value.trim();
+            if (!inputText) {
+                document.getElementById('result').innerHTML = '<p class="error">Please enter at least one CC-ID.</p>';
+                return;
+            }
+
+            // Split input by commas or spaces
+            const ccidArray = inputText.split(/[\s,]+/).filter(id => id.trim() !== '');
+            const validCcids = [];
+            const invalidCcids = [];
+
+            // Validate and convert input based on type (DEC or HEX)
+            ccidArray.forEach(id => {
+                let num;
+                if (inputType === 'hex') {
+                    num = parseInt(id, 16);
+                } else {
+                    num = parseInt(id, 10);
+                }
+                if (isNaN(num) || num < 0) {
+                    invalidCcids.push(id);
+                } else {
+                    validCcids.push(num);
+                }
+            });
+
+            if (validCcids.length === 0) {
+                document.getElementById('result').innerHTML = '<p class="error">No valid CC-IDs entered. Please enter numbers >= 0.</p>';
+                return;
+            }
+
+            let resultHtml = '<h3>Results</h3>';
+            if (invalidCcids.length > 0) {
+                resultHtml += `<p class="error">Invalid CC-IDs ignored: ${invalidCcids.join(', ')}</p>`;
+            }
+
+            resultHtml += `
+                <table>
+                    <tr>
+                        <th>CC-ID (DEC)</th>
+                        <th>CC-ID (HEX)</th>
+                        <th>Group</th>
+                        <th>Bit in Byte</th>
+                        <th>Byte Position</th>
+                        <th>Result Value (HEX)</th>
+                        <th>Notes (Short)</th>
+                    </tr>
+            `;
+
+            // Initialize default byte array for each group (10 bytes = FFFFFFFFFFFFFFFFFF per group)
+            const groupBytes = {};
+            const groupChangedPositions = {}; // Track changed byte positions per group for highlighting
+
+            // Calculate for each valid CC-ID and collect data
+            const results = [];
+            validCcids.forEach(ccid => {
+                // Calculate Group (64 bits per group, groups start from 1)
+                const bitsPerGroup = 64;
+                const groupIndex = Math.floor(ccid / bitsPerGroup);
+                const groupNumber = groupIndex + 1; // Groups are 1-based
+
+                // Initialize bytes for this group if not already done (10 bytes = 80 bits)
+                if (!groupBytes[groupNumber]) {
+                    groupBytes[groupNumber] = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+                    groupChangedPositions[groupNumber] = new Set();
+                }
+
+                // Calculate bit position within the group
+                const bitInGroup = ccid - (groupIndex * bitsPerGroup);
+
+                // Calculate byte and bit within byte (bytes and bits start from 0)
+                const byteInGroup = Math.floor(bitInGroup / 8);
+                const bitInByte = bitInGroup - (byteInGroup * 8);
+
+                // Clear the bit at the corresponding position in the group's byte array
+                const bitValue = Math.pow(2, bitInByte);
+                groupBytes[groupNumber][byteInGroup] &= ~bitValue;
+
+                // Track changed byte position for highlighting
+                groupChangedPositions[groupNumber].add(byteInGroup);
+
+                // Add row to table with result value and notes
+                const resultValue = groupBytes[groupNumber][byteInGroup].toString(16).toUpperCase().padStart(2, '0');
+                const note = ccidNotes[ccid] || { short: "No notes available", long: "No further information available." };
+                resultHtml += `
+                    <tr>
+                        <td>${ccid}</td>
+                        <td>${ccid.toString(16).toUpperCase()}</td>
+                        <td>${groupNumber}</td>
+                        <td>${bitInByte}</td>
+                        <td>${byteInGroup}</td>
+                        <td>${resultValue}</td>
+                        <td class="note-short" data-fulltext="${note.long}">${note.short}</td>
+                    </tr>
+                `;
+            });
+
+            resultHtml += '</table>';
+
+            // Display the modified byte string for each affected group with highlighting
+            resultHtml += '<h3>Modified Byte Strings by Group</h3>';
+            for (const [group, bytes] of Object.entries(groupBytes)) {
+                const changedPositions = groupChangedPositions[group] || new Set();
+                const byteString = bytes.map((b, index) => {
+                    const hexValue = b.toString(16).toUpperCase().padStart(2, '0');
+                    return changedPositions.has(index) 
+                        ? `<span class="changed-byte">${hexValue}</span>` 
+                        : hexValue;
+                }).join('');
+                resultHtml += `<p><strong>Group ${group}</strong>: <span class="byte-string">${byteString}</span></p>`;
+            }
+
+            document.getElementById('result').innerHTML = resultHtml;
+        }
+    </script>
+</body>
+</html>
