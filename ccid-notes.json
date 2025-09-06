@@ -20,14 +20,14 @@
   {
     "ID": 100,
     "Control unit": "ZGM central gateway module",
-    "Text (short form)": "Pre-crash sensor dirty. Owner's Handbook.",
-    "Text (long form)": "Function of the pre-crash sensor faulty. Clean the left pre-crash sensor, see"
+    "Text (short form)": "Pre-crash sensor dirty.",
+    "Text (long form)": "Function of the pre-crash sensor faulty. Clean the left pre-crash sensor, see Owner's Handbook."
   },
   {
     "ID": 101,
     "Control unit": "ZGM central gateway module",
-    "Text (short form)": "Pre-crash sensor dirty. Owner's Handbook.",
-    "Text (long form)": "Function of the pre-crash sensor faulty. Clean the rear pre-crash sensor, see"
+    "Text (short form)": "Pre-crash sensor dirty.",
+    "Text (long form)": "Function of the pre-crash sensor faulty. Clean the rear pre-crash sensor, see Owner's Handbook."
   },
   {
     "ID": 102,
@@ -446,8 +446,8 @@
   {
     "ID": 167,
     "Control unit": "KOMBI Instrument cluster",
-    "Text (short form)": "Set time and date Owner's Handbook. // Set time and date. See Owner's Manual for further information.",
-    "Text (long form)": "Battery was disconnected, displays of time and date no longer correct. Reset, see"
+    "Text (short form)": "Set time and date.",
+    "Text (long form)": "Battery was disconnected, displays of time and date no longer correct. Reset, see Owner's Handbook. // Set time and date. See Owner's Manual for further information."
   },
   {
     "ID": 168,
@@ -7330,143 +7330,5 @@
     "Control unit": "KOMBI Instrument cluster",
     "Text (short form)": "No further information.",
     "Text (long form)": "No further information."
-  },
-  {
-    "ID": "Control",
-    "Control unit": "independently assistance.",
-    "Text (short form)": "//",
-    "Text (long form)": "Parking"
-  },
-  {
-    "ID": "DME Digital Motor",
-    "Control unit": "Secure vehicle to prevent",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "EME Electrical machine",
-    "Control unit": "Standard charging not Rapid charging not Flap of the charging Rapid charging active Charging with reduced",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "EME electrical machine",
-    "Control unit": "Heating/cooling",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "Electrical Digital Motor",
-    "Control unit": "",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "Electronics",
-    "Control unit": "",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "Electronics / EDME",
-    "Control unit": "it rolling!",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "Generator",
-    "Control unit": "protection failure",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "KOMBI Instrument",
-    "Control unit": "Driver assistance. Pay Heating/cooling",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "PCU Power Control",
-    "Control unit": "Engine start possible",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "PDC Park Distance",
-    "Control unit": "Parking assistance. Park",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "TRSVC all-round vision",
-    "Control unit": "Panorama View. Check",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "Unit",
-    "Control unit": "in ... minutes",
-    "Text (short form)": "",
-    "Text (long form)": "possible shortly."
-  },
-  {
-    "ID": "VSG Vehicle Sound",
-    "Control unit": "Acoustic pedestrian",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "camera",
-    "Control unit": "camera lense",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "cluster",
-    "Control unit": "deactivated when stationary",
-    "Text (short form)": "",
-    "Text (long form)": "started at the set departure time, in order to protect the vehicle battery. Function is available again after a short drive."
-  },
-  {
-    "ID": "cluster / SAS optional",
-    "Control unit": "attention to the",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "electronics",
-    "Control unit": "possible // AC charging not possible possible socket is open power",
-    "Text (short form)": "",
-    "Text (long form)": "AC charging system. Observe residual range. Have checked by the nearest service nearest service partner. vehicle. If the function limitation permanently persists, have it checked by your BMW Service Workshop."
-  },
-  {
-    "ID": "electronics / IHKA",
-    "Control unit": "deactivated when",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "equipment system",
-    "Control unit": "distance // possible to continue driving. Driver assistance.",
-    "Text (short form)": "",
-    "Text (long form)": "roadway. If the problem reoccurs, have it checked by the service partner."
-  },
-  {
-    "ID": "heating/air conditioning",
-    "Control unit": "",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "integrated automatic",
-    "Control unit": "stationary",
-    "Text (short form)": "",
-    "Text (long form)": ""
-  },
-  {
-    "ID": "system",
-    "Control unit": "",
-    "Text (short form)": "",
-    "Text (long form)": "voltage battery was not sufficient for the last climate control."
   }
 ]
