@@ -89,14 +89,27 @@
             font-family: monospace;
             background-color: #eef;
             padding: 5px;
+            display: inline-flex;
+            gap: 8px;
+        }
+        .byte-item {
+            padding: 3px 6px;
+            border-radius: 3px;
+            background-color: #dde;
         }
         .changed-byte {
             background-color: #ffeb3b;
             font-weight: bold;
         }
+        .byte-index {
+            font-size: 10px;
+            color: #666;
+            display: block;
+            text-align: center;
+        }
         .note-short {
             max-width: 250px;
-            white-space: normal; /* Cho phép xuống dòng */
+            white-space: normal;
             cursor: pointer;
             position: relative;
         }
@@ -216,19 +229,18 @@
                     </tr>
             `;
 
-            // Initialize default byte array for each group (10 bytes = FFFFFFFFFFFFFFFFFF per group)
+            // Initialize default byte array for each group (8 bytes = 64 bits per group)
             const groupBytes = {};
-            const groupChangedPositions = {}; // Track changed byte positions per group for highlighting
+            const groupChangedPositions = {};
 
             // Calculate for each valid CC-ID and collect data
-            const results = [];
             validCcids.forEach(ccid => {
                 // Calculate Group (64 bits per group, groups start from 1)
                 const bitsPerGroup = 64;
                 const groupIndex = Math.floor(ccid / bitsPerGroup);
-                const groupNumber = groupIndex + 1; // Groups are 1-based
+                const groupNumber = groupIndex + 1;
 
-                // Initialize bytes for this group if not already done (10 bytes = 80 bits)
+                // Initialize bytes for this group if not already done (8 bytes = 64 bits)
                 if (!groupBytes[groupNumber]) {
                     groupBytes[groupNumber] = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
                     groupChangedPositions[groupNumber] = new Set();
@@ -237,18 +249,18 @@
                 // Calculate bit position within the group
                 const bitInGroup = ccid - (groupIndex * bitsPerGroup);
 
-                // Calculate byte and bit within byte (bytes and bits start from 0)
+                // Calculate byte and bit within byte
                 const byteInGroup = Math.floor(bitInGroup / 8);
                 const bitInByte = bitInGroup - (byteInGroup * 8);
 
-                // Clear the bit at the corresponding position in the group's byte array
+                // Clear the bit at the corresponding position
                 const bitValue = Math.pow(2, bitInByte);
                 groupBytes[groupNumber][byteInGroup] &= ~bitValue;
 
                 // Track changed byte position for highlighting
                 groupChangedPositions[groupNumber].add(byteInGroup);
 
-                // Add row to table with result value and notes
+                // Add row to table
                 const resultValue = groupBytes[groupNumber][byteInGroup].toString(16).toUpperCase().padStart(2, '0');
                 const note = ccidNotes[ccid] || { short: "No notes available", long: "No further information available." };
                 resultHtml += `
@@ -270,13 +282,16 @@
             resultHtml += '<h3>Modified Byte Strings by Group</h3>';
             for (const [group, bytes] of Object.entries(groupBytes)) {
                 const changedPositions = groupChangedPositions[group] || new Set();
-                const byteString = bytes.map((b, index) => {
+                
+                // Tạo chuỗi byte tách rời với index
+                const byteElements = bytes.map((b, index) => {
                     const hexValue = b.toString(16).toUpperCase().padStart(2, '0');
-                    return changedPositions.has(index) 
-                        ? `<span class="changed-byte">${hexValue}</span>` 
-                        : hexValue;
+                    const isChanged = changedPositions.has(index);
+                    const byteClass = isChanged ? 'byte-item changed-byte' : 'byte-item';
+                    return `<span class="${byteClass}"><span class="byte-index">[${index}]</span>${hexValue}</span>`;
                 }).join('');
-                resultHtml += `<p><strong>Group ${group}</strong>: <span class="byte-string">${byteString}</span></p>`;
+                
+                resultHtml += `<p><strong>Group ${group}</strong>: <span class="byte-string">${byteElements}</span></p>`;
             }
 
             document.getElementById('result').innerHTML = resultHtml;
