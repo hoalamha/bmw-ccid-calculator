@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,30 +14,36 @@
             margin-right: auto;
             background-color: #f5f5f5;
         }
+
         h1 {
             color: #333;
             text-align: center;
         }
+
         .container {
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .input-group {
             margin-bottom: 20px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         select {
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
             margin-right: 10px;
         }
+
         textarea {
             padding: 8px;
             width: 100%;
@@ -45,6 +52,7 @@
             border-radius: 4px;
             resize: vertical;
         }
+
         button {
             padding: 10px 20px;
             background-color: #4CAF50;
@@ -53,9 +61,11 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #45a049;
         }
+
         #result {
             margin-top: 20px;
             padding: 15px;
@@ -65,26 +75,33 @@
             max-height: 500px;
             overflow-y: auto;
         }
+
         .result-item {
             margin: 10px 0;
             font-weight: bold;
         }
+
         .error {
             color: red;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
         }
+
         th {
             background-color: #e9e9e9;
         }
+
         .byte-string {
             font-family: monospace;
             background-color: #eef;
@@ -92,27 +109,32 @@
             display: inline-flex;
             gap: 8px;
         }
+
         .byte-item {
             padding: 3px 6px;
             border-radius: 3px;
             background-color: #dde;
         }
+
         .changed-byte {
             background-color: #ffeb3b;
             font-weight: bold;
         }
+
         .byte-index {
             font-size: 10px;
             color: #666;
             display: block;
             text-align: center;
         }
+
         .note-short {
             max-width: 250px;
             white-space: normal;
             cursor: pointer;
             position: relative;
         }
+
         .note-short:hover::after {
             content: attr(data-fulltext);
             position: absolute;
@@ -130,6 +152,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>CC-ID Bit Calculator</h1>
@@ -141,8 +164,18 @@
             </select>
         </div>
         <div class="input-group">
-            <label for="ccids">Enter CC-IDs (separated by commas or spaces, e.g., 299, 300, 301 or 12B, 12C, 12D):</label>
+            <label for="ccids">Enter CC-IDs (separated by commas or spaces, e.g., 299, 300, 301 or 12B, 12C,
+                12D):</label>
             <textarea id="ccids" placeholder="299, 300, 301 (DEC) or 12B, 12C, 12D (HEX)">299</textarea>
+        </div>
+        <div class="input-group">
+            <label>Display Mode:</label>
+            <label style="display:inline; margin-right: 15px;">
+                <input type="radio" name="displayMode" value="grouped" checked> Grouped View
+            </label>
+            <label style="display:inline;">
+                <input type="radio" name="displayMode" value="unified"> Unified View
+            </label>
         </div>
         <button onclick="calculateBitPositions()">Calculate</button>
         <div id="result">
@@ -174,7 +207,7 @@
         }
 
         // Tải dữ liệu khi trang được load
-        window.onload = function() {
+        window.onload = function () {
             loadNotesData();
         };
 
@@ -278,24 +311,56 @@
 
             resultHtml += '</table>';
 
-            // Display the modified byte string for each affected group with highlighting
-            resultHtml += '<h3>Modified Byte Strings by Group</h3>';
-            for (const [group, bytes] of Object.entries(groupBytes)) {
-                const changedPositions = groupChangedPositions[group] || new Set();
-                
-                // Tạo chuỗi byte tách rời với index
-                const byteElements = bytes.map((b, index) => {
-                    const hexValue = b.toString(16).toUpperCase().padStart(2, '0');
-                    const isChanged = changedPositions.has(index);
-                    const byteClass = isChanged ? 'byte-item changed-byte' : 'byte-item';
-                    return `<span class="${byteClass}"><span class="byte-index">[${index}]</span>${hexValue}</span>`;
-                }).join('');
-                
-                resultHtml += `<p><strong>Group ${group}</strong>: <span class="byte-string">${byteElements}</span></p>`;
+            // Determine Display Mode
+            const displayMode = document.querySelector('input[name="displayMode"]:checked').value;
+
+            // Display the modified byte string based on selected mode
+            resultHtml += '<h3>Modified Byte Strings</h3>';
+
+            if (displayMode === 'grouped') {
+                for (const [group, bytes] of Object.entries(groupBytes)) {
+                    const changedPositions = groupChangedPositions[group] || new Set();
+
+                    // Tạo chuỗi byte tách rời với index
+                    const byteElements = bytes.map((b, index) => {
+                        const hexValue = b.toString(16).toUpperCase().padStart(2, '0');
+                        const isChanged = changedPositions.has(index);
+                        const byteClass = isChanged ? 'byte-item changed-byte' : 'byte-item';
+                        return `<span class="${byteClass}"><span class="byte-index">[${index}]</span>${hexValue}</span>`;
+                    }).join('');
+
+                    resultHtml += `<p><strong>Group ${group}</strong>: <span class="byte-string">${byteElements}</span></p>`;
+                }
+            } else {
+                // Unified Mode: Combine all groups from 1 to maxGroup
+                const groupNumbers = Object.keys(groupBytes).map(Number);
+                if (groupNumbers.length > 0) {
+                    const maxGroup = Math.max(...groupNumbers);
+                    let unifiedElements = '';
+
+                    for (let g = 1; g <= maxGroup; g++) {
+                        // Use existing group bytes or default to all FF (8 bytes)
+                        const bytes = groupBytes[g] || [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+                        const changedPositions = groupChangedPositions[g] || new Set();
+
+                        const groupElements = bytes.map((b, index) => {
+                            const hexValue = b.toString(16).toUpperCase().padStart(2, '0');
+                            const isChanged = changedPositions.has(index);
+                            const byteClass = isChanged ? 'byte-item changed-byte' : 'byte-item';
+                            // Global byte index: (g-1)*8 + index
+                            const globalIndex = (g - 1) * 8 + index;
+                            return `<span class="${byteClass}"><span class="byte-index">[${globalIndex}]</span>${hexValue}</span>`;
+                        }).join('');
+
+                        unifiedElements += groupElements; // Just concatenate blocks
+                    }
+                    resultHtml += `<p><span class="byte-string" style="flex-wrap: wrap;">${unifiedElements}</span></p>`;
+                }
             }
 
             document.getElementById('result').innerHTML = resultHtml;
         }
     </script>
 </body>
+
 </html>
