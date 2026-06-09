@@ -296,7 +296,7 @@
         <h1>Byte Array Editor</h1>
         <div class="input-group">
             <label for="byteInput">Nhập chuỗi HEX (phân cách bằng dấu phẩy hoặc khoảng trắng):</label>
-            <textarea id="byteInput"
+            <textarea id="byteInput" oninput="loadByteArray()"
 >FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF</textarea>
         </div>
         <div class="editor-toolbar">
@@ -318,7 +318,8 @@
             const input = document.getElementById('byteInput').value.trim();
             const parts = input.split(/[\s,]+/).filter(p => p !== '');
             if (parts.length === 0) {
-                alert('Vui lòng nhập ít nhất một giá trị HEX.');
+                document.getElementById('byteEditor').innerHTML = '';
+                document.getElementById('byteOutput').style.display = 'none';
                 return;
             }
             originalBytes = parts.map(p => {
