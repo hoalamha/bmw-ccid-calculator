@@ -221,6 +221,43 @@
         .btn-orange:hover { background-color: #e68900; }
         .btn-red   { background-color: #f44336; }
         .btn-red:hover   { background-color: #d32f2f; }
+        .btn-purple { background-color: #9C27B0; }
+        .btn-purple:hover { background-color: #7B1FA2; }
+
+        .decode-result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .decode-summary {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .decode-table-wrap {
+            max-height: 420px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .decode-table-wrap table {
+            margin-top: 0;
+        }
+
+        .decode-table-wrap thead th {
+            position: sticky;
+            top: 0;
+            background-color: #e9e9e9;
+            z-index: 1;
+        }
+
+        tr.row-changed {
+            background-color: #fff9e6;
+        }
     </style>
 </head>
 
@@ -266,9 +303,11 @@
             <button onclick="loadByteArray()">Load / Reload</button>
             <button class="btn-blue" onclick="copyByteArray()">Copy Result</button>
             <button class="btn-orange" onclick="resetByteArray()">Reset</button>
+            <button class="btn-purple" onclick="decodeByteArray()">Decode CC-IDs</button>
         </div>
         <div id="byteEditor"></div>
         <div id="byteOutput" class="byte-editor-output" style="display:none;"></div>
+        <div id="byteDecodeResult" style="display:none; margin-top:20px;"></div>
     </div>
 
     <script>
@@ -360,6 +399,86 @@
         function resetByteArray() {
             if (originalBytes.length === 0) return;
             renderByteEditor(originalBytes);
+            document.getElementById('byteDecodeResult').style.display = 'none';
+        }
+
+        function decodeByteArray() {
+            const inputs = document.querySelectorAll('.byte-input');
+            if (inputs.length === 0) {
+                alert('Chưa có dữ liệu. Nhấn Load trước.');
+                return;
+            }
+
+            const activeCcids = [];
+
+            inputs.forEach((inp, globalByteIndex) => {
+                const byteVal = parseInt(inp.value, 16);
+                if (isNaN(byteVal)) return;
+                const origVal = parseInt(inp.dataset.original, 16);
+
+                for (let bitPos = 0; bitPos < 8; bitPos++) {
+                    const isActive = (byteVal & (1 << bitPos)) === 0;
+                    if (!isActive) continue;
+
+                    const groupIndex = Math.floor(globalByteIndex / 8);
+                    const byteInGroup = globalByteIndex % 8;
+                    const ccid = groupIndex * 64 + byteInGroup * 8 + bitPos;
+
+                    const wasActive = !isNaN(origVal) && (origVal & (1 << bitPos)) === 0;
+                    activeCcids.push({ ccid, globalByteIndex, bitPos, byteVal, changed: !wasActive });
+                }
+            });
+
+            const resultEl = document.getElementById('byteDecodeResult');
+            resultEl.style.display = 'block';
+
+            if (activeCcids.length === 0) {
+                resultEl.innerHTML = '<p>Không có CC-ID nào được kích hoạt (tất cả bits đều là 1).</p>';
+                resultEl.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            const changedCount = activeCcids.filter(x => x.changed).length;
+            const totalCount = activeCcids.length;
+
+            let html = `
+                <div class="decode-result-header">
+                    <h3 style="margin:0;">Decoded CC-IDs</h3>
+                </div>
+                <div class="decode-summary">
+                    Tổng active: <strong>${totalCount}</strong> CC-ID
+                    &nbsp;|&nbsp; Thay đổi so với gốc: <strong>${changedCount}</strong>
+                    &nbsp;|&nbsp; <span style="background:#fff9e6;padding:2px 6px;border-radius:3px;">nền vàng</span> = byte được sửa
+                </div>
+                <div class="decode-table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>CC-ID (DEC)</th>
+                        <th>CC-ID (HEX)</th>
+                        <th>Byte [index]</th>
+                        <th>Bit</th>
+                        <th>Byte Value</th>
+                        <th>Notes</th>
+                    </tr></thead>
+                    <tbody>`;
+
+            activeCcids.forEach(({ ccid, globalByteIndex, bitPos, byteVal, changed }) => {
+                const note = ccidNotes[ccid] || { short: 'No notes available', long: 'No further information available.' };
+                const rowClass = changed ? ' class="row-changed"' : '';
+                html += `
+                    <tr${rowClass}>
+                        <td>${ccid}</td>
+                        <td>${ccid.toString(16).toUpperCase()}</td>
+                        <td>[${globalByteIndex}]</td>
+                        <td>${bitPos}</td>
+                        <td>${byteVal.toString(16).toUpperCase().padStart(2, '0')}</td>
+                        <td class="note-short" data-fulltext="${note.long}">${note.short}</td>
+                    </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            resultEl.innerHTML = html;
+            resultEl.scrollIntoView({ behavior: 'smooth' });
         }
 
         // Auto-load khi trang sẵn sàng
