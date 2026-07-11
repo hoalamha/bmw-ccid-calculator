@@ -258,6 +258,40 @@
         tr.row-changed {
             background-color: #fff9e6;
         }
+
+        #ccidSearchText {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .search-summary {
+            font-size: 13px;
+            color: #555;
+            margin: 10px 0;
+        }
+
+        .search-status-active {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .search-status-inactive {
+            color: #777;
+        }
+
+        .search-status-unknown {
+            color: #999;
+            font-style: italic;
+        }
+
+        mark {
+            background-color: #ffeb3b;
+            padding: 0 1px;
+        }
     </style>
 </head>
 
@@ -308,6 +342,16 @@
         <div id="byteEditor"></div>
         <div id="byteOutput" class="byte-editor-output" style="display:none;"></div>
         <div id="byteDecodeResult" style="display:none; margin-top:20px;"></div>
+    </div>
+
+    <!-- ===== TÌM CC-ID THEO TEXT HIỂN THỊ ===== -->
+    <div class="container" style="margin-top: 24px;">
+        <h1>Tìm CC-ID theo Text</h1>
+        <div class="input-group">
+            <label for="ccidSearchText">Nhập từ khóa (tìm trong nội dung mô tả/note của CC-ID):</label>
+            <input type="text" id="ccidSearchText" placeholder="VD: door, window, brake..." oninput="searchCcidByText()">
+        </div>
+        <div id="ccidSearchResult"></div>
     </div>
 
     <script>
@@ -480,6 +524,99 @@
             html += '</tbody></table></div>';
             resultEl.innerHTML = html;
             resultEl.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ===== TÌM CC-ID THEO TEXT HIỂN THỊ =====
+        const CCID_SEARCH_MAX_RESULTS = 300;
+
+        function escapeRegExp(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            return text.replace(new RegExp(escapeRegExp(query), 'gi'), match => `<mark>${match}</mark>`);
+        }
+
+        // Tra cứu trạng thái bit hiện tại (active/inactive) của một CC-ID dựa trên byte array đang load
+        function getCcidByteState(ccid) {
+            const groupIndex = Math.floor(ccid / 64);
+            const bitInGroup = ccid - groupIndex * 64;
+            const byteInGroup = Math.floor(bitInGroup / 8);
+            const bitPos = bitInGroup % 8;
+            const globalByteIndex = groupIndex * 8 + byteInGroup;
+
+            const inp = document.querySelector(`.byte-input[data-index="${globalByteIndex}"]`);
+            if (!inp) return { globalByteIndex, bitPos, active: null };
+
+            const byteVal = parseInt(inp.value, 16);
+            if (isNaN(byteVal)) return { globalByteIndex, bitPos, active: null };
+
+            return { globalByteIndex, bitPos, active: (byteVal & (1 << bitPos)) === 0 };
+        }
+
+        function searchCcidByText() {
+            const resultEl = document.getElementById('ccidSearchResult');
+            const query = document.getElementById('ccidSearchText').value.trim();
+
+            if (!query) {
+                resultEl.innerHTML = '';
+                return;
+            }
+
+            const lowerQuery = query.toLowerCase();
+            const matches = [];
+            for (const idStr in ccidNotes) {
+                const note = ccidNotes[idStr];
+                if (note.short.toLowerCase().includes(lowerQuery) || note.long.toLowerCase().includes(lowerQuery)) {
+                    matches.push({ ccid: Number(idStr), note });
+                }
+            }
+            matches.sort((a, b) => a.ccid - b.ccid);
+
+            if (matches.length === 0) {
+                resultEl.innerHTML = `<p>Không tìm thấy CC-ID nào có text chứa "${query}".</p>`;
+                return;
+            }
+
+            const shown = matches.slice(0, CCID_SEARCH_MAX_RESULTS);
+            let html = `<div class="search-summary">Tìm thấy <strong>${matches.length}</strong> CC-ID khớp`
+                + (matches.length > shown.length ? ` (hiển thị ${shown.length} đầu tiên)` : '') + `.</div>`;
+            html += `
+                <div class="decode-table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>CC-ID (DEC)</th>
+                        <th>CC-ID (HEX)</th>
+                        <th>Byte [index] / Bit</th>
+                        <th>Trạng thái</th>
+                        <th>Notes</th>
+                    </tr></thead>
+                    <tbody>`;
+
+            shown.forEach(({ ccid, note }) => {
+                const state = getCcidByteState(ccid);
+                let statusHtml;
+                if (state.active === null) {
+                    statusHtml = '<span class="search-status-unknown">Chưa load byte array</span>';
+                } else if (state.active) {
+                    statusHtml = '<span class="search-status-active">ACTIVE</span>';
+                } else {
+                    statusHtml = '<span class="search-status-inactive">inactive</span>';
+                }
+
+                html += `
+                    <tr${state.active ? ' class="row-changed"' : ''}>
+                        <td>${ccid}</td>
+                        <td>${ccid.toString(16).toUpperCase()}</td>
+                        <td>[${state.globalByteIndex}] / bit ${state.bitPos}</td>
+                        <td>${statusHtml}</td>
+                        <td class="note-short" data-fulltext="${note.long}">${highlightMatch(note.short, query)}</td>
+                    </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            resultEl.innerHTML = html;
         }
 
         // Auto-load khi trang sẵn sàng
