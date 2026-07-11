@@ -158,6 +158,29 @@
             margin-top: 12px;
         }
 
+        .byte-group {
+            margin-top: 12px;
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .byte-group + .byte-group {
+            margin-top: 10px;
+        }
+
+        .byte-group-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        .byte-group .byte-editor-grid {
+            margin-top: 4px;
+        }
+
         .byte-cell {
             display: flex;
             flex-direction: column;
@@ -333,6 +356,15 @@
             <textarea id="byteInput" oninput="loadByteArray()"
 >FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF</textarea>
         </div>
+        <div class="input-group">
+            <label>Hiển thị:</label>
+            <label style="display:inline; margin-right: 15px;">
+                <input type="radio" name="byteDisplayMode" value="unified" checked onchange="onByteDisplayModeChange()"> Unified View
+            </label>
+            <label style="display:inline;">
+                <input type="radio" name="byteDisplayMode" value="grouped" onchange="onByteDisplayModeChange()"> Grouped View (8 byte/nhóm)
+            </label>
+        </div>
         <div class="editor-toolbar">
             <button onclick="loadByteArray()">Load / Reload</button>
             <button class="btn-blue" onclick="copyByteArray()">Copy Result</button>
@@ -373,22 +405,57 @@
             renderByteEditor(originalBytes);
         }
 
-        function renderByteEditor(bytes) {
-            let html = '<div class="byte-editor-grid">';
-            bytes.forEach((b, i) => {
-                const hex = b.toString(16).toUpperCase().padStart(2, '0');
-                html += `
+        function getByteDisplayMode() {
+            const el = document.querySelector('input[name="byteDisplayMode"]:checked');
+            return el ? el.value : 'unified';
+        }
+
+        function byteCellHtml(i, byteVal, origVal) {
+            const hex = byteVal.toString(16).toUpperCase().padStart(2, '0');
+            const origHex = origVal.toString(16).toUpperCase().padStart(2, '0');
+            const modifiedClass = hex !== origHex ? ' modified' : '';
+            return `
                     <div class="byte-cell">
                         <span class="byte-index">[${i}]</span>
-                        <input class="byte-input" type="text" maxlength="2"
-                            value="${hex}" data-original="${hex}" data-index="${i}"
+                        <input class="byte-input${modifiedClass}" type="text" maxlength="2"
+                            value="${hex}" data-original="${origHex}" data-index="${i}"
                             oninput="onByteInput(this)"
                             onblur="finalizeByteInput(this)">
                     </div>`;
-            });
-            html += '</div>';
+        }
+
+        function renderByteEditor(bytes, origBytes) {
+            const orig = origBytes || bytes;
+            const mode = getByteDisplayMode();
+            let html = '';
+
+            if (mode === 'grouped') {
+                for (let start = 0; start < bytes.length; start += 8) {
+                    const groupNumber = start / 8 + 1;
+                    html += `<div class="byte-group"><div class="byte-group-label">Group ${groupNumber}</div><div class="byte-editor-grid">`;
+                    for (let i = start; i < Math.min(start + 8, bytes.length); i++) {
+                        html += byteCellHtml(i, bytes[i], orig[i]);
+                    }
+                    html += '</div></div>';
+                }
+            } else {
+                html += '<div class="byte-editor-grid">';
+                bytes.forEach((b, i) => { html += byteCellHtml(i, b, orig[i]); });
+                html += '</div>';
+            }
+
             document.getElementById('byteEditor').innerHTML = html;
             updateByteOutput();
+        }
+
+        function onByteDisplayModeChange() {
+            const inputs = document.querySelectorAll('.byte-input');
+            if (inputs.length === 0) return;
+            const currentBytes = Array.from(inputs).map(inp => {
+                const v = parseInt(inp.value, 16);
+                return isNaN(v) ? 0xFF : (v & 0xFF);
+            });
+            renderByteEditor(currentBytes, originalBytes);
         }
 
         function onByteInput(el) {
